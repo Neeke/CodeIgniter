@@ -2,7 +2,7 @@
 /**
  * CodeIgniter
  *
- * An open source application development framework for PHP 5.1.6 or newer
+ * An open source application development framework for PHP 5.2.4 or newer
  *
  * NOTICE OF LICENSE
  *
@@ -107,7 +107,7 @@ class CI_DB_pdo_sqlite_forge extends CI_DB_pdo_forge {
 	public function drop_database($db_name = '')
 	{
 		// In SQLite, a database is dropped when we delete a file
-		if (@file_exists($this->db->database))
+		if (file_exists($this->db->database))
 		{
 			// We need to close the pseudo-connection first
 			$this->db->close();

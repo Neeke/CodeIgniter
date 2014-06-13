@@ -80,7 +80,7 @@ class CI_Lang {
 
 		if ($add_suffix === TRUE)
 		{
-			$langfile = str_replace('_lang', '', $langfile).'_lang';
+			$langfile = preg_replace('/_lang$/', '', $langfile).'_lang';
 		}
 
 		$langfile .= '.php';
@@ -168,7 +168,7 @@ class CI_Lang {
 	 */
 	public function line($line, $log_errors = TRUE)
 	{
-		$value = ($line === '' OR ! isset($this->language[$line])) ? FALSE : $this->language[$line];
+		$value = isset($this->language[$line]) ? $this->language[$line] : FALSE;
 
 		// Because killer robots like unicorns!
 		if ($value === FALSE && $log_errors === TRUE)

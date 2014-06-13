@@ -29,8 +29,8 @@ matrix:
     - php: hhvm
   exclude:
     - php: hhvm
-      env: DB=mysqli
       env: DB=pgsql
+    - php: hhvm
       env: DB=pdo/pgsql
 
 branches:

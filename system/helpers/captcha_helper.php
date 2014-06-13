@@ -82,7 +82,7 @@ if ( ! function_exists('create_captcha'))
 		}
 
 		if ($img_path === '' OR $img_url === ''
-			OR ! @is_dir($img_path) OR ! is_really_writable($img_path)
+			OR ! is_dir($img_path) OR ! is_really_writable($img_path)
 			OR ! extension_loaded('gd'))
 		{
 			return FALSE;
@@ -215,6 +215,7 @@ if ( ! function_exists('create_captcha'))
 		// -----------------------------------
 		//  Generate the image
 		// -----------------------------------
+		$img_url = rtrim($img_url, '/').'/';
 		$img_filename = $now.'.jpg';
 		ImageJPEG($im, $img_path.$img_filename);
 		$img = '<img src="'.$img_url.$img_filename.'" style="width: '.$img_width.'; height: '.$img_height .'; border: 0;" alt=" " />';

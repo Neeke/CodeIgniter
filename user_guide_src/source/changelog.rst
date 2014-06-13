@@ -48,6 +48,8 @@ Release Date: Not Released
    -  Removed previously deprecated EXT constant.
    -  Updated all classes to be written in PHP 5 style, with visibility declarations and no ``var`` usage for properties.
    -  Moved error templates to *application/views/errors/*.
+   -  Added support non-HTML error templates for CLI applications.
+   -  Made error templates path configurable using ``$config['error_views_path']``.
    -  Moved the Log class to *application/core/*
    -  Global config files are loaded first, then environment ones. Environment config keys overwrite base ones, allowing to only set the keys we want changed per environment.
    -  Changed detection of ``$view_folder`` so that if it's not found in the current path, it will now also be searched for under the application folder.
@@ -56,10 +58,9 @@ Release Date: Not Released
    -  Changed environment defaults to report all errors in *development* and only fatal ones in *testing*, *production* but only display them in *development*.
    -  Updated *ip_address* database field lengths from 16 to 45 for supporting IPv6 address on :doc:`Trackback Library <libraries/trackback>` and :doc:`Captcha Helper <helpers/captcha_helper>`.
    -  Removed *cheatsheets* and *quick_reference* PDFs from the documentation.
-   -  Added support non-HTML error templates for CLI applications.
    -  Added availability checks where usage of dangerous functions like ``eval()`` and ``exec()`` is required.
    -  Added support for changing the file extension of log files using ``$config['log_file_extension']``.
-   -  Added support for turning newline standardization on/off via ``$config['standardize_newlines']``.
+   -  Added support for turning newline standardization on/off via ``$config['standardize_newlines']`` and set it to FALSE by default.
 
 -  Helpers
 
@@ -86,7 +87,8 @@ Release Date: Not Released
 
       - Added more doctypes.
       - Changed application and environment config files to be loaded in a cascade-like manner.
-      - The doctypes array is now cached and loaded only once.
+      - Changed :func:`doctype()` to cache and only load once the doctypes array.
+      - Deprecated functions ``nbs()`` and ``br()``, which are just aliases for the native ``str_repeat()`` with ``&nbsp;`` and ``<br />`` respectively.
 
    -  :doc:`Inflector Helper <helpers/inflector_helper>` changes include:
 
@@ -155,8 +157,9 @@ Release Date: Not Released
    -  Renamed internal method ``_escape_identifiers()`` to ``escape_identifiers()``.
    -  Updated ``escape_identifiers()`` to accept an array of fields as well as strings.
    -  MySQL and MySQLi drivers now require at least MySQL version 5.1.
+   -  Added a ``$persistent`` parameter to ``db_connect()`` and changed ``db_pconnect()`` to be an alias for ``db_connect(TRUE)``.
    -  ``db_set_charset()`` now only requires one parameter (collation was only needed due to legacy support for MySQL versions prior to 5.1).
-   -  ``db_select()`` will now always (if required by the driver) be called by ``db_connect()`` / ``db_pconnect()`` instead of only when initializing.
+   -  ``db_select()`` will now always (if required by the driver) be called by ``db_connect()`` instead of only when initializing.
    -  Replaced the ``_error_message()`` and ``_error_number()`` methods with ``error()``, which returns an array containing the last database error code and message.
    -  Improved ``version()`` implementation so that drivers that have a native function to get the version number don't have to be defined in the core ``DB_driver`` class.
    -  Added capability for packages to hold *config/database.php* config files.
@@ -275,7 +278,7 @@ Release Date: Not Released
 
       -  Library changed to :doc:`Driver <general/drivers>` with classic 'cookie' driver as the default.
       -  Added a 'native' PHP Session driver to work with ``$_SESSION``.
-      -  Added a new **tempdata** feature that allows setting userdata items with expiration time (``tempdata()``, ``set_tempdata()``, ``unset_tempdata()``). 
+      -  Added a new **tempdata** feature that allows setting userdata items with expiration time (``tempdata()``, ``set_tempdata()``, ``unset_tempdata()``).
       -  Added default ``$config['sess_driver']`` and ``$config['sess_valid_drivers']`` items to *application/config.php* file.
       -  Changed 'cookie' driver to respect php.ini's *session.gc_probability* and *session.gc_divisor* settings.
       -  Changed 'cookie' driver to use HMAC authentication instead of a simple md5 checksum.
@@ -289,12 +292,16 @@ Release Date: Not Released
 
    -  :doc:`File Uploading Library <libraries/file_uploading>` changes include:
 
-      -  Added **max_filename_increment** config setting.
-      -  Added an **index** parameter to the ``data()`` method.
-      -  Added the **min_width** and **min_height** options for images.
+      -  Added method chaining support.
+      -  Added support for using array notation in file field names.
+      -  Added **max_filename_increment** and **file_ext_tolower** configuration settings.
+      -  Added **min_width** and **min_height** configuration settings for images.
+      -  Added **mod_mime_fix** configuration setting to disable suffixing multiple file extensions with an underscore.
+      -  Added the possibility pass **allowed_types** as an array.
+      -  Added an ``$index`` parameter to the method ``data()``.
+      -  Added a ``$reset`` parameter to method ``initialize()``.
       -  Removed method ``clean_file_name()`` and its usage in favor of :doc:`Security Library <libraries/security>`'s ``sanitize_filename()``.
-      -  Added **file_ext_tolower** config setting.
-      -  Added **mod_mime_fix** option to disable suffixing multiple file extensions with an underscore.
+      -  Removed method ``mimes_types()``.
 
    -  :doc:`Calendar Library <libraries/calendar>` changes include:
 
@@ -311,7 +318,7 @@ Release Date: Not Released
       -  Added unicode support for product names.
       -  Added support for disabling product name strictness via the ``$product_name_safe`` property.
       -  Changed ``insert()`` method to auto-increment quantity for an item when inserted twice instead of resetting it.
-      -	 Changed ``update()`` method to support updating all properties attached to an item.
+      -	 Changed ``update()`` method to support updating all properties attached to an item and not to require 'qty'.
 
    -  :doc:`Image Manipulation Library <libraries/image_lib>` changes include:
 
@@ -339,6 +346,8 @@ Release Date: Not Released
       -  :doc:`Language <libraries/language>` line keys must now be prefixed with **form_validation_**.
       -  Added rule **alpha_numeric_spaces**.
       -  Added support for custom error messages per field rule.
+      -  Added support for callable rules when they are passed as an array.
+      -  Added support for non-ASCII domains in **valid_email** rule, depending on the Intl extension.
 
    -  :doc:`Caching Library <libraries/caching>` changes include:
 
@@ -367,6 +376,7 @@ Release Date: Not Released
       -  Added an optional parameter to ``print_debugger()`` to allow specifying which parts of the message should be printed ('headers', 'subject', 'body').
       -  Added SMTP keepalive option to avoid opening the connection for each ``send()`` call. Accessible as ``$smtp_keepalive``.
       -  Public method ``set_header()`` now filters the input by removing all "\\r" and "\\n" characters.
+      -  Added support for non-ASCII domains in ``valid_email()``, depending on the Intl extension.
 
    -  :doc:`Pagination Library <libraries/pagination>` changes include:
 
@@ -377,6 +387,7 @@ Release Date: Not Released
       -  Added support for language translations of the *first_link*, *next_link*, *prev_link* and *last_link* values.
       -  Added ``$config['reuse_query_string']`` to allow automatic repopulation of query string arguments, combined with normal URI segments.
       -  Removed the default ``&nbsp;`` from a number of the configuration variables.
+      -  Added support for ``$config['num_links'] = 0`` configuration.
 
    -  :doc:`Profiler Library <general/profiling>` changes include:
 
@@ -429,7 +440,7 @@ Release Date: Not Released
       -  Renamed internal method ``_detect_uri()`` to ``_parse_request_uri()``.
       -  Changed ``_parse_request_uri()`` to accept absolute URIs for compatibility with HTTP/1.1 as per `RFC2616 <http://www.ietf.org/rfc/rfc2616.txt>`.
       -  Added protected method ``_parse_query_string()`` to URI paths in the the **QUERY_STRING** value, like ``_parse_request_uri()`` does.
-      -  Changed ``_fetch_uri_string()`` to try the **PATH_INFO** variable first when auto-detecting.
+      -  Changed URI string detection logic to try the **PATH_INFO** variable first when auto-detecting.
       -  Removed methods ``_remove_url_suffix()``, ``_explode_segments()`` and moved their logic into ``_set_uri_string()``.
       -  Removed method ``_fetch_uri_string()`` and moved its logic into the class constructor.
       -  Removed method ``_reindex_segments()``.
@@ -460,6 +471,7 @@ Release Date: Not Released
       -  Changed method ``_fetch_from_array()`` to parse array notation in field name.
       -  Added an option for ``_clean_input_keys()`` to return FALSE instead of terminating the whole script.
       -  Deprecated the ``is_cli_request()`` method, it is now an alias for the new :func:`is_cli()` common function.
+      -  Added an ``$xss_clean`` parameter to method ``user_agent()`` and removed the ``$user_agent`` property.
 
    -  :doc:`Common functions <general/common_functions>` changes include:
 
@@ -471,6 +483,8 @@ Release Date: Not Released
       -  Added function :func:`is_cli()` to replace the ``CI_Input::is_cli_request()`` method.
       -  Added function :func:`function_usable()` to work around a bug in `Suhosin <http://www.hardened-php.net/suhosin/>`.
       -  Removed the third (`$php_error`) argument from function :func:`log_message()`.
+      -  Changed internal function ``load_class()`` to accept a constructor parameter instead of (previously unused) class name prefix.
+      -  Removed default parameter value of :func:`is_php()`.
 
    -  :doc:`Output Library <libraries/output>` changes include:
 
@@ -496,11 +510,12 @@ Release Date: Not Released
    -  :doc:`Language Library <libraries/language>` changes include:
 
       -  Changed method ``load()`` to filter the language name with ``ctype_alpha()``.
-      -  Added an optional second parameter to method ``line()`` to disable error login for line keys that were not found.
+      -  Added an optional second parameter to method ``line()`` to disable error logging for line keys that were not found.
       -  Language files are now loaded in a cascading style with the one in **system/** always loaded and overriden afterwards, if another one is found.
 
    -  :doc:`Hooks Library <general/hooks>` changes include:
 
+      -  Added support for closure hooks (or anything that ``is_callable()`` returns TRUE for).
       -  Renamed method ``_call_hook()`` to ``call_hook()``.
       -  Class instances are now stored in order to maintain their state.
 
@@ -513,7 +528,7 @@ Release Date: Not Released
    -  Added `compatibility layers <general/compatibility_functions>` for:
 
       - `Multibyte String <http://php.net/mbstring>`_ (limited support).
-      - `Hash <http://php.net/hash>`_ (just ``hash_pbkdf2()``).
+      - `Hash <http://php.net/hash>`_ (``hash_equals()``, ``hash_pbkdf2()``).
       - `Password Hashing <http://php.net/password>`_.
       - `Array Functions <http://php.net/book.array>`_ (``array_column()``, ``array_replace()``, ``array_replace_recursive()``).
 
@@ -539,7 +554,6 @@ Bug fixes for 3.0
 -  Fixed a bug (#795) - :doc:`Form Helper <helpers/form_helper>` :func:`form_open()` didn't add the default form *method* and *accept-charset* when an empty array is passed to it.
 -  Fixed a bug (#797) - :doc:`Date Helper <helpers/date_helper>` :func:`timespan()` was using incorrect seconds for year and month.
 -  Fixed a bug in :doc:`Cart Library <libraries/cart>` method ``contents()`` where if called without a TRUE (or equal) parameter, it would fail due to a typo.
--  Fixed a bug (#696) - make ``oci_execute()`` calls inside ``num_rows()`` non-committing, since they are only there to reset which row is next in line for oci_fetch calls and thus don't need to be committed.
 -  Fixed a bug (#406) - SQLSRV DB driver not returning resource on ``db_pconnect()``.
 -  Fixed a bug in :doc:`Image Manipulation Library <libraries/image_lib>` method ``gd_loaded()`` where it was possible for the script execution to end or a PHP E_WARNING message to be emitted.
 -  Fixed a bug in the :doc:`Pagination library <libraries/pagination>` where when use_page_numbers=TRUE previous link and page 1 link did not have the same url.
@@ -691,7 +705,6 @@ Bug fixes for 3.0
 -  Fixed a bug (#2551) - :doc:`Loader Library <libraries/loader>` method ``library()`` didn't properly check if a class that is being loaded already exists.
 -  Fixed a bug (#2560) - :doc:`Form Helper <helpers/form_helper>` function :func:`form_open()` set the 'method="post"' attribute only if the passed attributes equaled an empty string.
 -  Fixed a bug (#2585) - :doc:`Query Builder <database/query_builder>` methods ``min()``, ``max()``, ``avg()``, ``sum()`` didn't escape field names.
--  Fixed an edge case (#2583) in the :doc:`Email Library <libraries/email>` where `Suhosin <http://www.hardened-php.net/suhosin/>` blocked messages sent via ``mail()`` due to trailing newspaces in headers.
 -  Fixed a bug (#2590) - :doc:`Common function <general/common_functions>` :func:`log_message()` didn't actually cache the ``CI_Log`` class instance.
 -  Fixed a bug (#2609) - :doc:`Common function <general/common_functions>` :func:`get_config()` optional argument was only effective on first function call. Also, it can now add items, in addition to updating existing items.
 -  Fixed a bug in the 'postgre' :doc:`database <database/index>` driver where the connection ID wasn't passed to ``pg_escape_string()``.
@@ -716,12 +729,32 @@ Bug fixes for 3.0
 -  Fixed a bug (#2737) - :doc:`XML-RPC Library <libraries/xmlrpc>` used objects as array keys, which triggered E_NOTICE messages.
 -  Fixed a bug (#2729) - :doc:`Security Library <libraries/security>` internal method ``_validate_entities()`` used overly-intrusive ``preg_replace()`` patterns that produced false-positives.
 -  Fixed a bug (#2771) - :doc:`Security Library <libraries/security>` method ``xss_clean()`` didn't take into account HTML5 entities.
--  Fixed a bug in the :doc:`Session Library <libraries/sessions>` 'cookie' driver where authentication was not performed for encrypted cookies.
 -  Fixed a bug (#2856) - ODBC method ``affected_rows()`` passed an incorrect value to ``odbc_num_rows()``.
 -  Fixed a bug (#43) :doc:`Image Manipulation Library <libraries/image_lib>` method ``text_watermark()`` didn't properly determine watermark placement.
 -  Fixed a bug where :doc:`HTML Table Library <libraries/table>` ignored its *auto_heading* setting if headings were not already set.
 -  Fixed a bug (#2364) - :doc:`Pagination Library <libraries/pagination>` appended the query string (if used) multiple times when there are successive calls to ``create_links()`` with no ``initialize()`` in between them.
 -  Partially fixed a bug (#261) - UTF-8 class method ``clean_string()`` generating log messages and/or not producing the desired result due to an upstream bug in iconv.
+-  Fixed a bug where ``CI_Xmlrpcs::parseRequest()`` could fail if ``$HTTP_RAW_POST_DATA`` is not populated.
+-  Fixed a bug in :doc:`Zip Library <libraries/zip>` internal method ``_get_mod_time()`` where it was not parsing result returned by ``filemtime()``.
+
+Version 2.2.0
+=============
+
+Release Date: June 2, 2014
+
+-  General Changes
+
+   - Security: :doc:`Encrypt Library <libraries/encrypt>` method ``xor_encode()`` has been removed. The Encrypt Class now requires the Mcrypt extension to be installed.
+   - Security: The :doc:`Session Library <libraries/sessions>` now uses HMAC authentication instead of a simple MD5 checksum.
+
+Bug fixes for 2.2.0
+-------------------
+
+-  Fixed an edge case (#2583) in the :doc:`Email Library <libraries/email>` where `Suhosin <http://www.hardened-php.net/suhosin/>` blocked messages sent via ``mail()`` due to trailing newspaces in headers.
+-  Fixed a bug (#696) - make ``oci_execute()`` calls inside ``num_rows()`` non-committing, since they are only there to reset which row is next in line for oci_fetch calls and thus don't need to be committed.
+-  Fixed a bug (#2689) - :doc:`Database Force <database/forge>` methods ``create_table()``, ``drop_table()`` and ``rename_table()`` produced broken SQL for tge 'sqlsrv' driver.
+-  Fixed a bug (#2427) - PDO :doc:`Database driver <database/index>` didn't properly check for query failures.
+-  Fixed a bug in the :doc:`Session Library <libraries/sessions>` where authentication was not performed for encrypted cookies.
 
 Version 2.1.4
 =============
